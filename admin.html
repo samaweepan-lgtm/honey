@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8"><title>Admin: หยิบ-แพ็ค-จ่าหน้า</title>
+<style>
+body{font-family:'Sarabun',sans-serif;margin:20px}table{border-collapse:collapse;margin-bottom:24px}
+td,th{border:1px solid #999;padding:6px 10px}.labels{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.label{border:2px dashed #000;padding:12px;break-inside:avoid;font-size:15px}
+@media print{.no-print{display:none}}
+</style></head><body>
+<div class="no-print"><input id="url" size="50" placeholder="Apps Script URL"> <input id="key" type="password" placeholder="Admin key">
+<button onclick="load()">โหลดออเดอร์</button> <button onclick="window.print()">พิมพ์</button></div>
+<h2>1) ใบหยิบสินค้า (รวมตาม SKU) — ออเดอร์สถานะ new</h2><div id="pick"></div>
+<h2>2) ใบแพ็คสินค้า (รายออเดอร์)</h2><div id="pack"></div>
+<h2>3) ใบจ่าหน้าพัสดุ</h2><div class="labels" id="labels"></div>
+<script>
+const $=i=>document.getElementById(i);
+$("url").value=localStorage.u||"";
+async function load(){localStorage.u=$("url").value;
+const r=await fetch($("url").value+"?key="+encodeURIComponent($("key").value));const all=await r.json();
+if(all.error)return alert("รหัสไม่ถูกต้อง");
+const o=all.filter(x=>x.status==="new"),sum={};
+o.forEach(x=>{const k=x.sku+"|"+x.product;sum[k]=(sum[k]||0)+Number(x.qty)});
+$("pick").innerHTML="<table><tr><th>SKU</th><th>สินค้า</th><th>จำนวนที่ต้องหยิบ</th></tr>"+
+Object.entries(sum).map(([k,q])=>{const[s,p]=k.split("|");return`<tr><td>${s}</td><td>${p}</td><td>${q}</td></tr>`}).join("")+"</table>";
+$("pack").innerHTML="<table><tr><th>ออเดอร์</th><th>ผู้รับ</th><th>SKU</th><th>จำนวน</th><th>✔</th></tr>"+
+o.map(x=>`<tr><td>${x.order_id}</td><td>${x.name}</td><td>${x.sku}</td><td>${x.qty}</td><td>☐</td></tr>`).join("")+"</table>";
+$("labels").innerHTML=o.map(x=>`<div class="label"><b>ผู้ส่ง:</b> Golden Hive (ใส่ที่อยู่ร้าน)<hr><b>ถึง:</b> ${x.name}<br>โทร ${x.phone}<br>${x.address}<hr>ออเดอร์ ${x.order_id} | ${x.sku} x ${x.qty}</div>`).join("");}
+</script></body></html>
